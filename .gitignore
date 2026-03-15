@@ -1,0 +1,30 @@
+# Node
+node_modules/
+
+# Next.js
+.next/
+
+# Local env files
+.env.local
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+
+# Temp
+dist/
+
+# Copilot session files
+.copilot/
+
+# Plan artifacts
+Plan/
