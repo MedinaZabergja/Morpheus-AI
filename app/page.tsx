@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
-export default function Home() {
+function DreamJournal() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState('');
   const [error, setError] = useState('');
+  const { signOut, user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,17 +26,25 @@ export default function Home() {
         body: JSON.stringify({ message: input }),
       });
 
+      if (res.status === 401) {
+        throw new Error('Please log in to use the AI features');
+      }
+
       if (!res.ok) {
-        throw new Error(`Gabim nga serveri: ${res.status}`);
+        throw new Error(`Server error: ${res.status}`);
       }
 
       const data = await res.json();
       setResponse(data.reply);
     } catch (err: any) {
-      setError(err.message || 'Diçka shkoi gabim. Provo përsëri.');
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (
@@ -41,10 +52,21 @@ export default function Home() {
       <div className="w-full max-w-2xl flex flex-col gap-10">
         
         <header className="text-center space-y-2">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm text-slate-400">
+              Welcome, {user?.user_metadata?.full_name || user?.email}
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm text-red-400 hover:text-red-300 glass rounded-lg transition-all cursor-pointer hover:bg-red-500/10"
+            >
+              Logout
+            </button>
+          </div>
           <h1 className="text-4xl font-bold tracking-tight text-white flex items-center justify-center gap-3">
             Morpheus 🌙 AI
           </h1>
-          <p className="text-slate-400 text-sm">Powered by Gemini & Next.js</p>
+          <p className="text-slate-400 text-sm">Your Personal Dream Journal</p>
         </header>
 
         {/* Input Form */}
@@ -53,7 +75,7 @@ export default function Home() {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Write your question here..."
+              placeholder="Describe your dream here..."
               className="w-full p-6 h-48 rounded-2xl glass placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all resize-none text-lg"
               disabled={loading}
             />
@@ -67,10 +89,10 @@ export default function Home() {
                 {loading ? (
                     <>
                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ✨ Thinking...
+                    ✨ Analyzing...
                     </>
                 ) : (
-                    <>✨ Send</>
+                    <>✨ Analyze Dream</>
                 )}
                 </button>
             </div>
@@ -80,7 +102,7 @@ export default function Home() {
           {loading && (
             <div className="p-4 rounded-xl glass flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
               <span className="text-xl">🌙</span>
-              <span className="text-slate-300">AI is analyzing your question...</span>
+              <span className="text-slate-300">AI is analyzing your dream...</span>
             </div>
           )}
 
@@ -114,7 +136,7 @@ export default function Home() {
             <div className="p-8 rounded-2xl glass animate-in fade-in zoom-in-95 duration-500 border-l-4 border-indigo-500">
               <h2 className="text-lg font-bold text-indigo-300 mb-4 flex items-center gap-2">
                 <span role="img" aria-label="sparkles">✨</span>
-                AI Response:
+                Dream Analysis:
               </h2>
               <div className="prose prose-invert max-w-none">
                 <p className="text-slate-200 leading-8 whitespace-pre-wrap text-lg">
@@ -127,5 +149,13 @@ export default function Home() {
 
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <ProtectedRoute>
+      <DreamJournal />
+    </ProtectedRoute>
   );
 }

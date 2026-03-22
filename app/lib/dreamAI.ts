@@ -1,4 +1,4 @@
-import { HfInference } from "@huggingface/inference";
+/*import { HfInference } from "@huggingface/inference";
 
 
 
@@ -34,4 +34,4 @@ export const interpretDream = async (dreamText) => {
 
   }
 
-};
+};*/

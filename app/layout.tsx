@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "./context/AuthContext";
 
 export const metadata: Metadata = {
-  title: "Morpheus 🌙 AI",
-  description: "Detyra e kursit - MorphTest Project",
+  title: "Morpheus 🌙 AI - Dream Journal",
+  description: "AI-powered dream journal for analyzing and tracking your dreams",
 };
 
 export default function RootLayout({
@@ -12,8 +13,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="sq">
-      <body>{children}</body>
+    <html lang="en">
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
