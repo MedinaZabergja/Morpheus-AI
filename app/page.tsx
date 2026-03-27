@@ -1,15 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { createClient } from './lib/supabaseClient';
+
+interface Dream {
+  id: string;
+  content: string;
+  ai_analysis: string;
+  mood: string | null;
+  title: string | null;
+  created_at: string;
+}
 
 function DreamJournal() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState('');
   const [error, setError] = useState('');
+  const [dreams, setDreams] = useState<Dream[]>([]);
+  const [saving, setSaving] = useState(false);
   const { signOut, user } = useAuth();
+  const supabase = createClient();
+
+  // Load dreams from database on mount
+  useEffect(() => {
+    fetchDreams();
+  }, []);
+
+  const fetchDreams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('dreams')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDreams(data || []);
+    } catch (err: any) {
+      console.error('Error fetching dreams:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,11 +68,76 @@ function DreamJournal() {
 
       const data = await res.json();
       setResponse(data.reply);
+      
+      // Save to database
+      await saveDream(input, data.reply);
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveDream = async (content: string, analysis: string) => {
+    setSaving(true);
+    try {
+      // Extract mood and title from analysis
+      const mood = extractMood(analysis);
+      const title = extractTitle(analysis);
+
+      const { error } = await supabase
+        .from('dreams')
+        .insert({
+          user_id: user?.id,
+          content: content,
+          ai_analysis: analysis,
+          mood: mood,
+          title: title,
+        });
+
+      if (error) throw error;
+      
+      // Refresh dreams list
+      await fetchDreams();
+    } catch (err: any) {
+      console.error('Error saving dream:', err);
+      setError('Dream analyzed but failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteDream = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('dreams')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Remove from local state
+      setDreams(dreams.filter(d => d.id !== id));
+    } catch (err: any) {
+      console.error('Error deleting dream:', err);
+      setError('Failed to delete dream.');
+    }
+  };
+
+  // Extract mood from AI response
+  const extractMood = (analysis: string): string => {
+    const moods = ['anxious', 'adventurous', 'peaceful', 'mysterious', 'joyful', 'nostalgic', 'surreal'];
+    const lower = analysis.toLowerCase();
+    for (const mood of moods) {
+      if (lower.includes(mood)) return mood;
+    }
+    return 'mysterious';
+  };
+
+  // Extract title from AI response
+  const extractTitle = (analysis: string): string => {
+    const match = analysis.match(/\*\*Title:\*\*\s*["']?([^"'\n]+)["']?/i);
+    return match ? match[1].trim() : 'Untitled Dream';
   };
 
   return (
@@ -100,6 +197,14 @@ function DreamJournal() {
             </div>
           )}
 
+          {/* Saving status */}
+          {saving && (
+            <div className="p-4 rounded-xl glass flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+              <span className="text-xl">💾</span>
+              <span className="text-slate-300">Saving dream to journal...</span>
+            </div>
+          )}
+
           {/* Error State */}
           {error && !loading && (
             <div className="p-6 rounded-2xl glass-error flex items-start justify-between gap-5 animate-in fade-in slide-in-from-top-4 duration-500 border-l-4 border-red-500/50">
@@ -133,22 +238,18 @@ function DreamJournal() {
               </h2>
               <div className="response-content text-slate-200 leading-relaxed">
                 {response.split('\n').map((line, i) => {
-                  // Skip empty lines
                   if (!line.trim()) return <div key={i} className="h-4" />;
                   
-                  // Main headers (remove ** and style as headers)
                   if (line.startsWith('**') && line.endsWith('**') && !line.includes(':')) {
                     const text = line.replace(/\*\*/g, '');
                     return <h3 key={i} className="text-xl font-bold text-white mt-6 mb-3">{text}</h3>;
                   }
                   
-                  // Section headers with colons
                   if (line.startsWith('**') && line.includes(':**')) {
                     const text = line.replace(/\*\*/g, '');
                     return <h4 key={i} className="text-lg font-semibold text-indigo-300 mt-5 mb-2">{text}</h4>;
                   }
                   
-                  // Numbered list items
                   if (/^\d+\.\s/.test(line)) {
                     const content = line.replace(/\*\*/g, '').replace(/^\d+\.\s/, '');
                     return (
@@ -159,7 +260,6 @@ function DreamJournal() {
                     );
                   }
                   
-                  // Regular text (clean up any remaining **)
                   const cleanText = line.replace(/\*\*/g, '');
                   return <p key={i} className="text-slate-300 my-2">{cleanText}</p>;
                 })}
@@ -167,6 +267,42 @@ function DreamJournal() {
             </div>
           )}
         </section>
+
+        {/* Dream History from Database */}
+        {dreams.length > 0 && (
+          <section className="space-y-6 mt-12">
+            <h2 className="text-2xl font-bold text-white mb-6">Your Dream Journal ({dreams.length})</h2>
+            {dreams.map((dream) => (
+              <div key={dream.id} className="p-6 rounded-2xl glass border-l-4 border-indigo-500">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-indigo-300">
+                      {dream.title || 'Untitled Dream'}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {new Date(dream.created_at).toLocaleString()}
+                    </p>
+                    {dream.mood && (
+                      <span className="inline-block mt-2 px-2 py-1 text-xs rounded bg-indigo-500/20 text-indigo-300">
+                        {dream.mood}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => deleteDream(dream.id)}
+                    className="text-xs text-red-400 hover:text-red-300 cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </div>
+                <p className="text-slate-300 text-sm mb-3 italic">{dream.content}</p>
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <p className="text-slate-200 text-sm whitespace-pre-wrap">{dream.ai_analysis}</p>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
 
       </div>
     </main>
