@@ -1,111 +1,107 @@
-/*'use client';
+'use client';
 
 import { motion } from 'framer-motion';
-import { Calendar, Sparkles } from 'lucide-react';
-
-interface Dream {
-  id: string;
-  content: string;
-  response: string;
-  date: Date;
-  mood?: string;
-  title?: string;
-}
+import { Dream } from '../page';
 
 interface DreamCardProps {
   dream: Dream;
-  index: number;
+  onClick: () => void;
 }
 
-// Extract mood from AI response or default to mysterious
-function extractMood(response: string): { mood: string; color: string } {
-  const moods = [
-    { mood: 'anxious', color: '#64588C', keywords: ['anxiety', 'anxious', 'fear', 'scared', 'worried', 'stress'] },
-    { mood: 'adventurous', color: '#BF84A0', keywords: ['adventure', 'journey', 'explore', 'travel', 'exciting'] },
-    { mood: 'peaceful', color: '#7C9885', keywords: ['peace', 'calm', 'serene', 'tranquil', 'relaxed'] },
-    { mood: 'mysterious', color: '#4A4E69', keywords: ['mystery', 'unknown', 'strange', 'bizarre', 'weird'] },
-    { mood: 'joyful', color: '#E9C46A', keywords: ['joy', 'happy', 'laughter', 'celebration', 'delight'] },
-    { mood: 'nostalgic', color: '#9A8C98', keywords: ['nostalgia', 'memory', 'childhood', 'past', 'remember'] },
+// Generate creative title based on dream content (ONLY for new dreams)
+export function generateCreativeTitle(content: string): string {
+  const contentLower = content.toLowerCase();
+  
+  const themes = [
+    { keywords: ['water', 'ocean', 'sea', 'drown', 'swim', 'wave', 'drowning'], titles: ['The Abyssal Waltz', 'Tides of the Subconscious', 'Deep Waters', 'The Ocean\'s Whisper', 'Drowning in Dreams'] },
+    { keywords: ['fly', 'flying', 'sky', 'air', 'cloud', 'float'], titles: ['Ascending Beyond', 'The Weightless Journey', 'Skies Unbound', 'Elevation of Spirit'] },
+    { keywords: ['fall', 'falling', 'drop', 'descend', 'stairs'], titles: ['The Descent', 'Gravity\'s Embrace', 'Falling Into Mystery', 'The Long Drop', 'Stairway to the Abyss'] },
+    { keywords: ['chase', 'running', 'escape', 'flee', 'hide'], titles: ['The Eternal Chase', 'Shadows in Pursuit', 'Running Through Time', 'The Hunter and the Hunted'] },
+    { keywords: ['fire', 'burn', 'flame', 'heat', 'hot', 'volcano'], titles: ['The Inferno Within', 'Dancing Flames', 'Phoenix Rising', 'Embers of Truth', 'Volcanic Heart'] },
+    { keywords: ['forest', 'tree', 'wood', 'nature', 'garden'], titles: ['The Verdant Labyrinth', 'Whispers of the Woods', 'Roots of Memory', 'The Enchanted Grove'] },
+    { keywords: ['house', 'home', 'room', 'door', 'building'], titles: ['The House of Secrets', 'Rooms of the Mind', 'The Threshold', 'Architecture of Dreams'] },
+    { keywords: ['death', 'dead', 'die', 'grave', 'funeral'], titles: ['The Final Transition', 'Beyond the Veil', 'The Great Unknown', 'Death\'s Gentle Touch'] },
+    { keywords: ['love', 'kiss', 'romance', 'heart', 'passion'], titles: ['The Heart\'s Symphony', 'Echoes of Affection', 'Love in the Ether', 'The Romantic Vision'] },
+    { keywords: ['animal', 'cat', 'dog', 'bird', 'snake', 'wolf'], titles: ['The Spirit Guide', 'Creature of the Psyche', 'The Animal Within', 'Wilderness of Soul'] },
+    { keywords: ['orange', 'juice', 'fruit', 'sweet'], titles: ['Citrus Dreams', 'The Sweet Descent', 'Nectar of the Subconscious', 'Orange Twilight'] },
+    { keywords: ['cold', 'ice', 'snow', 'freeze', 'winter'], titles: ['The Frozen Hour', 'Winter\'s Embrace', 'Icebound Visions', 'The Cold Beyond'] },
+    { keywords: ['dark', 'black', 'night', 'shadow'], titles: ['Shadows of the Mind', 'The Darkened Path', 'Night\'s Embrace', 'The Obsidian Dream'] },
+    { keywords: ['light', 'bright', 'sun', 'shine'], titles: ['The Illuminated Vision', 'Radiance of the Soul', 'Sunlit Memories', 'The Bright Beyond'] },
   ];
 
-  const responseLower = response.toLowerCase();
-  
-  for (const moodData of moods) {
-    if (moodData.keywords.some(keyword => responseLower.includes(keyword))) {
-      return { mood: moodData.mood, color: moodData.color };
+  for (const theme of themes) {
+    if (theme.keywords.some(kw => contentLower.includes(kw))) {
+      return theme.titles[Math.floor(Math.random() * theme.titles.length)];
     }
   }
 
-  return { mood: 'mysterious', color: '#4A4E69' };
-}
-
-// Extract title from AI response or generate one
-function extractTitle(response: string): string {
-  const titleMatch = response.match(/\*\*Title:\*\*\s*["']?([^"'\n]+)["']?/i);
-  if (titleMatch) return titleMatch[1].trim();
+  const defaults = [
+    'The Midnight Vision', 'Shadows of the Mind', 'The Dreaming Hour',
+    'Fragments of Sleep', 'The Nocturnal Journey', 'Visions in Violet',
+    'The Subconscious Tapestry', 'Echoes of Night', 'The Slumbering Truth',
+    'Mysteries of the Deep', 'The Celestial Dance', 'Whispers in Darkness',
+    'The Ethereal Passage', 'Night\'s Silent Symphony', 'The Lucid Horizon',
+    'Dreams of the Abyss', 'The Phantom Reverie', 'Slumber\'s Secret',
+    'The Twilight Vision', 'Nocturnal Whispers'
+  ];
   
-  const prefixes = ['The Dream of', 'A Vision of', 'Journey Through', 'Whispers of', 'Echoes of'];
-  const suffixes = ['Twilight', 'Moonbeams', 'Stardust', 'Shadows', 'Memories', 'Destiny'];
-  return `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
+  return defaults[Math.floor(Math.random() * defaults.length)];
 }
 
-export function DreamCard({ dream, index }: DreamCardProps) {
-  const { content, response, date } = dream;
-  const { mood, color } = extractMood(response);
-  const title = extractTitle(response);
+export function DreamCard({ dream, onClick }: DreamCardProps) {
+  const date = new Date(dream.created_at);
+  const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+  const monthDay = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+  // Use saved title only - never regenerate
+  const displayTitle = dream.title || 'Untitled Dream';
+
+  const getMoods = () => {
+    const analysis = dream.ai_analysis.toLowerCase();
+    const moods = [];
+    if (analysis.includes('peaceful')) moods.push('Peaceful');
+    if (analysis.includes('anxious')) moods.push('Anxious');
+    if (analysis.includes('joyful') || analysis.includes('happy')) moods.push('Joyful');
+    if (analysis.includes('nostalgic')) moods.push('Nostalgic');
+    if (analysis.includes('curious')) moods.push('Curious');
+    if (analysis.includes('confused')) moods.push('Confused');
+    if (analysis.includes('mysterious')) moods.push('Mysterious');
+    if (moods.length === 0) moods.push('Mysterious');
+    return moods.slice(0, 2);
+  };
+
+  const moods = getMoods();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="glass rounded-2xl p-6 border-l-4 shadow-lg backdrop-blur-sm mb-6"
-      style={{ borderLeftColor: color }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="glass-card rounded-2xl p-6 cursor-pointer transition-all hover:border-purple-500/30"
     >
-      {/* Header */
-     /* <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5" style={{ color }} />
-          <h3 className="text-xl font-bold text-white">{title}</h3>
-        </div>
-        <div
-          className="px-3 py-1 rounded-full text-xs font-medium text-white capitalize"
-          style={{ backgroundColor: color }}
-        >
-          {mood}
-        </div>
+      <p className="text-sm text-purple-300 mb-2 font-sans">
+        {dayName}, {monthDay}
+      </p>
+      <h3 className="text-2xl font-bold text-white mb-3 font-serif">
+        {displayTitle}
+      </h3>
+      
+      <div className="flex gap-2 mb-4">
+        {moods.map((mood) => (
+          <span
+            key={mood}
+            className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-200 border border-purple-500/30 font-sans"
+          >
+            {mood}
+          </span>
+        ))}
       </div>
 
-      {/* Date *}
-      <div className="flex items-center gap-2 text-slate-400 text-sm mb-3">
-        <Calendar className="w-4 h-4" />
-        {date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
-      </div>
-
-      {/* Dream Content *}
-      <div className="mb-4">
-        <p className="text-slate-300 text-sm mb-2 font-medium">Your Dream:</p>
-        <p className="text-slate-200 leading-relaxed italic">{content}</p>
-      </div>
-
-      {/* AI Analysis *}
-      <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-        <p className="text-indigo-300 text-sm mb-2 font-medium flex items-center gap-2">
-          <Sparkles className="w-4 h-4" />
-          AI Analysis:
-        </p>
-        <div className="prose prose-invert max-w-none">
-          <p className="text-slate-200 leading-relaxed whitespace-pre-wrap text-sm">
-            {response}
-          </p>
-        </div>
-      </div>
+      <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed font-sans">
+        {dream.content.length > 120 
+          ? dream.content.substring(0, 120) + '...' 
+          : dream.content}
+      </p>
     </motion.div>
   );
-}*/
+}
