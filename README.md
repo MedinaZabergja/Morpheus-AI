@@ -1,34 +1,37 @@
 # Morpheus 🌙 AI - Project
 
-This is my AI Chat application created for the **MorphTest** project. It uses **Next.js** for the frontend and backend, and it's integrated with **Google Gemini** to provide smart AI responses.
+Morpheus AI is a dream journal web application created for the **MorphTest** project. It allows users to record their dreams, receive AI-powered interpretations, and securely store their personal dream history.
 
 ## 🚀 Features
 
-- **Premium UI**: I made it look really cool with a dark-mode theme and "glassmorphism" effects (using Tailwind CSS v4).
-- **Smart Responses**: Integrated with Gemini 2.5 Flash for fast and accurate answers.
-- **Error Handling**: Custom error messages if the API or network fails.
-- **Mobile Friendly**: The layout works great on both mobile and desktop.
+- **AI Dream Analysis**: Users can write their dreams and receive intelligent AI-generated interpretations.
+- **User Authentication**: Secure login and registration system using Supabase.
+- **Personal Dream History**: Each user can view only their own saved dreams.
+- **Clean UI**: Minimal, dark-themed interface designed for a calm and focused experience.
+- **Responsive Design**: Works smoothly on both desktop and mobile devices.
+
+## 🌐 Live Demo
+
+👉 [Live App](https://morpheus-ai1-f9a8bfwrh-zabergjam-9458s-projects.vercel.app/)
 
 ## 🛠️ Tech Stack
 
 - **Framework**: Next.js (App Router)
-- **Styling**: Tailwind CSS v4
-- **AI Engine**: Google Gemini API
-- **Developer**: Medina Zabergja
+- **Language**: TypeScript
+- **Database & Auth**: Supabase
+- **AI Engine**: Hugging Face API
+- **Styling**: Tailwind CSS
+- **Deployment**: Vercel
+
+## ⚙️ How It Works
+
+Users can create an account, log in, and start writing their dreams.  
+Each dream is sent to an AI model via the Hugging Face API for analysis, and the result is displayed instantly.  
+All dreams are stored securely in the database and linked to the authenticated user.
 
 ## 📦 How to Run
 
-1. Clone this repository.
+1. Clone this repository
 2. Install dependencies:
    ```bash
    npm install
-   ```
-3. Create a `.env.local` file and add your API keys:
-   ```env
-   GEMINI_API_KEY=your_key_here
-   ```
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open [http://localhost:3000](http://localhost:3000) to see it in action!
