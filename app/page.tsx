@@ -21,6 +21,7 @@ import { AddDreamView } from './components/AddDreamView';
 import { DreamDetailView } from './components/DreamDetailView';
 import { SleepHelpView } from './components/SleepHelpView';
 import { Starfield } from './components/Starfield';
+import { StatisticsView } from './components/StatisticsView';
 
 export interface Dream {
   id: string;
@@ -40,29 +41,13 @@ function DreamJournal() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showAddDream, setShowAddDream] = useState(false);
   const [showSleepHelp, setShowSleepHelp] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
+  const [analyzeError, setAnalyzeError] = useState('');
 
   const { signOut, user } = useAuth();
   const supabase = createClient();
-
-    const handleDeleteDream = async (dreamId: string) => {
-    try {
-      const { error } = await supabase
-        .from('dreams')
-        .delete()
-        .eq('id', dreamId)
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
-      
-      setDreams(dreams.filter(d => d.id !== dreamId));
-      setSelectedDream(null);
-    } catch (err) {
-      console.error('Error deleting dream:', err);
-      throw err;
-    }
-  };
 
   useEffect(() => {
     fetchDreams().then((fetchedDreams) => {
@@ -92,6 +77,7 @@ function DreamJournal() {
       return data;
     } catch (err) {
       console.error('Error fetching dreams:', err);
+      return [];
     }
   };
 
@@ -127,9 +113,11 @@ function DreamJournal() {
   };
 
   const handleAnalyze = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading || saving) return;
 
     setLoading(true);
+    setAnalyzeError('');
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -137,17 +125,58 @@ function DreamJournal() {
         body: JSON.stringify({ message: input }),
       });
 
-      if (!res.ok) throw new Error('Analysis failed');
+      const data = await res.json().catch(() => null);
 
-      const data = await res.json();
-      await saveDream(input, data.reply);
+      if (!res.ok) {
+        throw new Error(
+          data?.error || 'The dream could not be analyzed right now. Please try again.'
+        );
+      }
+
+      const reply = data?.reply;
+
+      if (!reply || typeof reply !== 'string' || !reply.trim()) {
+        throw new Error('The AI returned an empty response. Please try again.');
+      }
+
+      await saveDream(input, reply);
 
       setInput('');
       setShowAddDream(false);
+      setAnalyzeError('');
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Analysis error:', err);
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'A network or server error occurred. Please try again later.';
+
+      setAnalyzeError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearAnalyzeError = () => {
+    setAnalyzeError('');
+  };
+
+  const handleDeleteDream = async (dreamId: string) => {
+    try {
+      const { error } = await supabase
+        .from('dreams')
+        .delete()
+        .eq('id', dreamId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      setDreams(dreams.filter((d) => d.id !== dreamId));
+      setSelectedDream(null);
+    } catch (err) {
+      console.error('Error deleting dream:', err);
+      throw err;
     }
   };
 
@@ -177,9 +206,11 @@ function DreamJournal() {
     try {
       const title = generateUniqueTitle(content, dreams);
 
-      const mood = analysis.toLowerCase().includes('anxious')
+      const lowerAnalysis = analysis.toLowerCase();
+
+      const mood = lowerAnalysis.includes('anxious')
         ? 'anxious'
-        : analysis.toLowerCase().includes('peaceful')
+        : lowerAnalysis.includes('peaceful')
         ? 'peaceful'
         : 'mysterious';
 
@@ -191,10 +222,14 @@ function DreamJournal() {
         title,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error('Your dream was analyzed, but it could not be saved.');
+      }
+
       await fetchDreams();
     } catch (err) {
       console.error('Error saving:', err);
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -208,7 +243,9 @@ function DreamJournal() {
   );
 
   return (
-    <div className="min-h-screen bg-[#1a0b2e] text-white font-sans">
+    <div className="min-h-screen bg-[#1a0b2e] text-white font-sans relative">
+      <Starfield />
+
       <WelcomeModal isOpen={showWelcome} onClose={handleWelcomeClose} />
 
       <header className="sticky top-0 z-30 bg-[#1a0b2e]/80 backdrop-blur-md border-b border-purple-500/20">
@@ -236,7 +273,10 @@ function DreamJournal() {
               <span className="text-sm">Sleep Help</span>
             </button>
 
-            <button className="p-2 rounded-xl hover:bg-purple-500/20 transition-colors">
+            <button
+              onClick={() => setShowStatistics(true)}
+              className="p-2 rounded-xl hover:bg-purple-500/20 transition-colors"
+            >
               <BarChart3 className="w-5 h-5 text-purple-300" />
             </button>
 
@@ -287,7 +327,10 @@ function DreamJournal() {
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => setShowAddDream(true)}
+        onClick={() => {
+          setAnalyzeError('');
+          setShowAddDream(true);
+        }}
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full gradient-primary flex items-center justify-center shadow-lg shadow-purple-500/40 z-30"
       >
         <Plus className="w-6 h-6 text-white" />
@@ -297,11 +340,16 @@ function DreamJournal() {
         {showAddDream && (
           <AddDreamView
             isOpen={showAddDream}
-            onClose={() => setShowAddDream(false)}
+            onClose={() => {
+              setAnalyzeError('');
+              setShowAddDream(false);
+            }}
             input={input}
             setInput={setInput}
             onAnalyze={handleAnalyze}
             loading={loading || saving}
+            serverError={analyzeError}
+            clearServerError={clearAnalyzeError}
           />
         )}
       </AnimatePresence>
@@ -311,7 +359,16 @@ function DreamJournal() {
           <SleepHelpView
             isOpen={showSleepHelp}
             onClose={() => setShowSleepHelp(false)}
-            userId={user?.id || ''}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showStatistics && (
+          <StatisticsView
+            isOpen={showStatistics}
+            onClose={() => setShowStatistics(false)}
+            dreams={dreams}
           />
         )}
       </AnimatePresence>
@@ -325,11 +382,6 @@ function DreamJournal() {
           />
         )}
       </AnimatePresence>
-      <Starfield />  {/* ← Add this line */}
-    
-      <WelcomeModal isOpen={showWelcome} onClose={handleWelcomeClose} />
-      {/* ... rest of your JSX */}
-
     </div>
   );
 }
