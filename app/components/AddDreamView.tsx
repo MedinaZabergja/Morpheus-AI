@@ -9,7 +9,7 @@ interface AddDreamViewProps {
   onClose: () => void;
   input: string;
   setInput: (value: string) => void;
-  onAnalyze: () => void;
+  onAnalyze: () => Promise<void> | void;
   loading: boolean;
   serverError?: string;
   clearServerError?: () => void;
@@ -44,9 +44,15 @@ export function AddDreamView({
     return true;
   };
 
-  const handleAnalyzeClick = () => {
+  // ✅ UPDATED FUNCTION (BUG FIX + UX IMPROVEMENT)
+  const handleAnalyzeClick = async () => {
     if (loading) return;
 
+    // Clear previous errors
+    setError('');
+    if (serverError && clearServerError) clearServerError();
+
+    // Validation
     if (!input.trim()) {
       setError('Please describe your dream before submitting.');
       return;
@@ -57,8 +63,21 @@ export function AddDreamView({
       return;
     }
 
-    setError('');
-    onAnalyze();
+    // ✅ NETWORK CHECK (MAIN BUG FIX)
+    if (!navigator.onLine) {
+      setError('No internet connection. Please check your network and try again.');
+      return;
+    }
+
+    try {
+      // Call parent analyze function
+      await onAnalyze();
+    } catch (err) {
+      console.error('Analyze failed:', err);
+
+      // ✅ FALLBACK ERROR (API / SERVER FAILURE)
+      setError('Something went wrong while analyzing your dream. Please try again.');
+    }
   };
 
   const handleInputChange = (value: string) => {

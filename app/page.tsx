@@ -257,15 +257,6 @@ function DreamJournal() {
 
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <button
-              onClick={() => updateOldDreams()}
-              disabled={isUpdating}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] uppercase tracking-wider bg-purple-500/10 border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 transition-all"
-            >
-              <RefreshCw className={`w-3 h-3 ${isUpdating ? 'animate-spin' : ''}`} />
-              {isUpdating ? 'Updating...' : 'Fix Titles'}
-            </button>
-
-            <button
               onClick={() => setShowSleepHelp(true)}
               className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-purple-500/20 transition-colors text-purple-300"
             >
