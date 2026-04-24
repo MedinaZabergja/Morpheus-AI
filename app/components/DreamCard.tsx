@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import { Dream } from '../page';
 
 interface DreamCardProps {
@@ -48,12 +49,49 @@ export function generateCreativeTitle(content: string): string {
   return defaults[Math.floor(Math.random() * defaults.length)];
 }
 
+const moodColors: Record<string, { bg: string; text: string; glow: string }> = {
+  Peaceful: {
+    bg: 'rgba(99, 102, 241, 0.15)',
+    text: '#a5b4fc',
+    glow: 'rgba(99, 102, 241, 0.3)',
+  },
+  Anxious: {
+    bg: 'rgba(239, 68, 68, 0.15)',
+    text: '#fca5a5',
+    glow: 'rgba(239, 68, 68, 0.3)',
+  },
+  Joyful: {
+    bg: 'rgba(250, 204, 21, 0.15)',
+    text: '#fde047',
+    glow: 'rgba(250, 204, 21, 0.3)',
+  },
+  Nostalgic: {
+    bg: 'rgba(244, 114, 182, 0.15)',
+    text: '#fbcfe8',
+    glow: 'rgba(244, 114, 182, 0.3)',
+  },
+  Curious: {
+    bg: 'rgba(34, 197, 94, 0.15)',
+    text: '#86efac',
+    glow: 'rgba(34, 197, 94, 0.3)',
+  },
+  Confused: {
+    bg: 'rgba(156, 163, 175, 0.15)',
+    text: '#d1d5db',
+    glow: 'rgba(156, 163, 175, 0.3)',
+  },
+  Mysterious: {
+    bg: 'rgba(168, 85, 247, 0.15)',
+    text: '#d8b4fe',
+    glow: 'rgba(168, 85, 247, 0.3)',
+  },
+};
+
 export function DreamCard({ dream, onClick }: DreamCardProps) {
   const date = new Date(dream.created_at);
   const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
   const monthDay = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 
-  // Use saved title only - never regenerate
   const displayTitle = dream.title || 'Untitled Dream';
 
   const getMoods = () => {
@@ -71,37 +109,108 @@ export function DreamCard({ dream, onClick }: DreamCardProps) {
   };
 
   const moods = getMoods();
+  const primaryMood = moods[0] || 'Mysterious';
+  const primaryColors = moodColors[primaryMood] || moodColors.Mysterious;
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -4 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="glass-card rounded-2xl p-6 cursor-pointer transition-all hover:border-purple-500/30"
+      className="relative cursor-pointer group overflow-hidden rounded-2xl"
+      style={{
+        background: 'linear-gradient(135deg, rgba(45, 27, 78, 0.8) 0%, rgba(26, 11, 46, 0.9) 100%)',
+        border: '1px solid rgba(192, 132, 252, 0.15)',
+        boxShadow: `0 4px 24px rgba(0, 0, 0, 0.4), 0 0 20px ${primaryColors.glow}`,
+      }}
     >
-      <p className="text-sm text-purple-300 mb-2 font-sans">
-        {dayName}, {monthDay}
-      </p>
-      <h3 className="text-2xl font-bold text-white mb-3 font-serif">
-        {displayTitle}
-      </h3>
-      
-      <div className="flex gap-2 mb-4">
-        {moods.map((mood) => (
-          <span
-            key={mood}
-            className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-200 border border-purple-500/30 font-sans"
-          >
-            {mood}
-          </span>
-        ))}
+      {/* Mystical shimmer overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+        style={{
+          background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(192, 132, 252, 0.08) 50%, rgba(255,255,255,0.03) 55%, transparent 60%)',
+          backgroundSize: '200% 100%',
+          animation: 'mysticalShimmer 2s ease-in-out infinite',
+        }}
+      />
+
+      {/* Corner glow accents */}
+      <div
+        className="absolute -top-10 -right-10 w-20 h-20 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-500 blur-2xl pointer-events-none"
+        style={{ background: primaryColors.glow }}
+      />
+      <div
+        className="absolute -bottom-10 -left-10 w-20 h-20 rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-500 blur-2xl pointer-events-none"
+        style={{ background: 'rgba(192, 132, 252, 0.3)' }}
+      />
+
+      {/* Top edge light line */}
+      <div
+        className="absolute top-0 left-4 right-4 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${primaryColors.glow}, transparent)`,
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative p-6 z-10">
+        {/* Date with sparkle */}
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-3 h-3 text-purple-400/50 group-hover:text-purple-300/80 transition-colors duration-300" />
+          <p className="text-xs text-purple-300/60 font-medium tracking-wide uppercase">
+            {dayName}, {monthDay}
+          </p>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-2xl font-bold text-white mb-3 font-serif group-hover:text-purple-200 transition-colors duration-300">
+          {displayTitle}
+        </h3>
+        
+        {/* Mood badges */}
+        <div className="flex gap-2 mb-4">
+          {moods.map((mood) => {
+            const colors = moodColors[mood] || moodColors.Mysterious;
+            return (
+              <span
+                key={mood}
+                className="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-300 group-hover:shadow-lg"
+                style={{
+                  background: colors.bg,
+                  color: colors.text,
+                  borderColor: colors.glow,
+                  boxShadow: `0 0 12px ${colors.glow}`,
+                }}
+              >
+                {mood}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Content preview */}
+        <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed group-hover:text-purple-200/80 transition-colors duration-300">
+          {dream.content.length > 120 
+            ? dream.content.substring(0, 120) + '...' 
+            : dream.content}
+        </p>
+
+        {/* Bottom mystical line */}
+        <div
+          className="mt-4 h-px w-12 opacity-30 group-hover:w-full group-hover:opacity-50 transition-all duration-700"
+          style={{
+            background: `linear-gradient(90deg, ${primaryColors.glow}, transparent)`,
+          }}
+        />
       </div>
 
-      <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed font-sans">
-        {dream.content.length > 120 
-          ? dream.content.substring(0, 120) + '...' 
-          : dream.content}
-      </p>
+      {/* Subtle border glow on hover */}
+      <div
+        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{
+          boxShadow: `inset 0 0 30px ${primaryColors.glow}, 0 0 40px ${primaryColors.glow}`,
+        }}
+      />
     </motion.div>
   );
 }

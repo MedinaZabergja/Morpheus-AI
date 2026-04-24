@@ -22,6 +22,7 @@ import { DreamDetailView } from './components/DreamDetailView';
 import { SleepHelpView } from './components/SleepHelpView';
 import { Starfield } from './components/Starfield';
 import { StatisticsView } from './components/StatisticsView';
+import { ProfileModal } from './components/ProfileModal';
 
 export interface Dream {
   id: string;
@@ -42,6 +43,7 @@ function DreamJournal() {
   const [showAddDream, setShowAddDream] = useState(false);
   const [showSleepHelp, setShowSleepHelp] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDream, setSelectedDream] = useState<Dream | null>(null);
   const [analyzeError, setAnalyzeError] = useState('');
@@ -180,6 +182,22 @@ function DreamJournal() {
     }
   };
 
+  const handleDeleteAllDreams = async () => {
+    try {
+      const { error } = await supabase
+        .from('dreams')
+        .delete()
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      setDreams([]);
+      setSelectedDream(null);
+    } catch (err) {
+      console.error('Error deleting all dreams:', err);
+      throw err;
+    }
+  };
+
   const generateUniqueTitle = (content: string, existingDreams: Dream[]): string => {
     const existingTitles = new Set(existingDreams.map((d) => d.title).filter(Boolean));
     let attempts = 0;
@@ -272,7 +290,7 @@ function DreamJournal() {
             </button>
 
             <button
-              onClick={() => signOut()}
+              onClick={() => setShowProfile(true)}
               className="p-2 rounded-xl hover:bg-purple-500/20 transition-colors"
             >
               <User className="w-5 h-5 text-purple-300" />
@@ -370,6 +388,18 @@ function DreamJournal() {
             dream={selectedDream}
             onClose={() => setSelectedDream(null)}
             onDelete={handleDeleteDream}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showProfile && (
+          <ProfileModal
+            isOpen={showProfile}
+            onClose={() => setShowProfile(false)}
+            onLogout={signOut}
+            onDeleteAllDreams={handleDeleteAllDreams}
+            dreamCount={dreams.length}
           />
         )}
       </AnimatePresence>
