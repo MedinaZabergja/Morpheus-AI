@@ -12,7 +12,7 @@ Morpheus AI is a dream journal web application created for the **MorphTest** pro
 
 ## 🌐 Live Demo
 
-👉 [Live App](https://morpheus-ai1-f9a8bfwrh-zabergjam-9458s-projects.vercel.app/)
+👉 [Live App](https://morpheus-ai1-git-main-zabergjam-9458s-projects.vercel.app/)
 
 ## 🛠️ Tech Stack
 

@@ -5,6 +5,10 @@ import { AuthProvider } from "./context/AuthContext";
 export const metadata: Metadata = {
   title: "Morpheus 🌙 AI - Dream Journal",
   description: "AI-powered dream journal for analyzing and tracking your dreams",
+
+  icons:{
+    icon: "/favicon.png",
+  }
 };
 
 export default function RootLayout({
