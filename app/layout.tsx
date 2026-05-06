@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "AI-powered dream journal for analyzing and tracking your dreams",
 
   icons:{
-    icon: "/favicon.png",
+    icon: "/icon.png",
   }
 };
 
